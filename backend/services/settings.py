@@ -22,7 +22,26 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=None, extra="ignore")
 
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-flash-latest"
+    # Ordered fallback chain: on quota (429) or missing model (404) we advance to
+    # the next. Each model has its own free-tier quota bucket, so this multiplies
+    # effective capacity. Comma-separated; edit via GEMINI_MODELS env var.
+    gemini_models: str = (
+        "gemini-2.5-flash,gemini-flash-latest,gemini-2.0-flash,"
+        "gemini-2.5-flash-lite,gemini-2.0-flash-lite,gemini-flash-lite-latest"
+    )
+    gemini_model: str = ""   # legacy single-model override; prepended if set
+
+    @property
+    def gemini_model_chain(self) -> list[str]:
+        raw = [m.strip() for m in
+               ((self.gemini_model + "," if self.gemini_model else "")
+                + self.gemini_models).split(",")]
+        seen, out = set(), []
+        for m in raw:
+            if m and m not in seen:
+                seen.add(m)
+                out.append(m)
+        return out
     google_cloud_project: str = ""
     bq_dataset: str = "varuna"
     bq_location: str = "asia-south1"

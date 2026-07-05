@@ -100,4 +100,5 @@ def chat(body: ChatIn):
         "chart": pick_chart(columns, rows),
         "narrative": narrate(q, columns, result["rows"]),
         "bytes_scanned": result["bytes_scanned"],
+        "model": gemini.active_model(),
     }

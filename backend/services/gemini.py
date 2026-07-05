@@ -1,13 +1,17 @@
 """Gemini client wrapper (google-genai, AI Studio key — NOT Vertex endpoints, §6).
 
-Every LLM feature degrades gracefully: callers catch GeminiError and show a
-readable fallback rather than a blank screen (§13).
+Model-fallback chain: each Gemini model has its own free-tier quota bucket, so when
+one returns 429 (exhausted) — or 404 (model doesn't exist) — we advance to the next
+model in the configured chain and stick with whatever works. This multiplies our
+effective quota and keeps CityPulse/Vision alive during a demo. Only when EVERY
+model in the chain is exhausted do we surface GeminiRateLimited (a clean,
+retry-later message). Configure the chain via GEMINI_MODELS (see settings).
 """
 from __future__ import annotations
 
 import functools
 import json
-import time
+import threading
 
 from .settings import get_settings
 
@@ -17,12 +21,21 @@ class GeminiError(RuntimeError):
 
 
 class GeminiRateLimited(GeminiError):
-    """Free-tier quota / 429 — caller can show a 'try again shortly' message."""
+    """Every model in the chain is quota-exhausted — caller shows 'try again'."""
 
 
 def _is_429(exc) -> bool:
     s = str(exc)
     return "429" in s or "RESOURCE_EXHAUSTED" in s or "quota" in s.lower()
+
+
+def _is_missing(exc) -> bool:
+    s = str(exc).lower()
+    return "404" in s or "not_found" in s or "not found" in s
+
+
+def _skippable(exc) -> bool:
+    return _is_429(exc) or _is_missing(exc)
 
 
 @functools.lru_cache
@@ -34,55 +47,85 @@ def _client():
     return genai.Client(api_key=s.gemini_api_key)
 
 
+# Persistent cursor: once a model works we keep using it until IT exhausts, then
+# advance. Wraps around so recovered models get retried on the next full cycle.
+_cursor = 0
+_cursor_lock = threading.Lock()
+_last_model = None
+
+
+def active_model() -> str | None:
+    return _last_model
+
+
+def _run(call):
+    """Try `call(model)` across the chain starting at the cursor; return first
+    success. Skip 429/404 models. Raise GeminiRateLimited if all are exhausted."""
+    global _cursor, _last_model
+    chain = get_settings().gemini_model_chain
+    if not chain:
+        raise GeminiError("no Gemini models configured")
+    n = len(chain)
+    start = _cursor % n
+    exhausted = []
+    for i in range(n):
+        idx = (start + i) % n
+        model = chain[idx]
+        try:
+            result = call(model)
+            with _cursor_lock:
+                _cursor = idx
+            _last_model = model
+            return result
+        except GeminiError:
+            raise
+        except Exception as e:  # noqa: BLE001
+            if _skippable(e):
+                exhausted.append(model)
+                continue
+            raise GeminiError(f"{model}: {e}") from e
+    raise GeminiRateLimited(
+        "all Gemini models exhausted: " + ", ".join(exhausted))
+
+
 def generate(prompt: str, system: str | None = None,
              temperature: float = 0.2, as_json: bool = False) -> str:
-    """Single-shot generation. Returns raw text (or JSON string if as_json)."""
     from google.genai import types
     cfg = types.GenerateContentConfig(
         temperature=temperature,
         system_instruction=system,
         response_mime_type="application/json" if as_json else None,
     )
-    last = None
-    for attempt in range(3):                      # brief backoff on transient 429s
-        try:
-            r = _client().models.generate_content(
-                model=get_settings().gemini_model, contents=prompt, config=cfg)
-            return (r.text or "").strip()
-        except Exception as e:  # noqa: BLE001
-            last = e
-            if _is_429(e) and attempt < 2:
-                time.sleep(2 * (attempt + 1))
-                continue
-            break
-    if _is_429(last):
-        raise GeminiRateLimited(str(last))
-    raise GeminiError(str(last))
+
+    def call(model):
+        r = _client().models.generate_content(model=model, contents=prompt, config=cfg)
+        return (r.text or "").strip()
+
+    return _run(call)
 
 
 def generate_json(prompt: str, system: str | None = None,
                   temperature: float = 0.2) -> dict:
-    txt = generate(prompt, system=system, temperature=temperature, as_json=True)
-    return _parse_json(txt)
+    return _parse_json(generate(prompt, system=system, temperature=temperature,
+                                as_json=True))
 
 
 def analyze_image(image_bytes: bytes, mime_type: str, prompt: str,
                   temperature: float = 0.1) -> dict:
-    """Gemini Vision -> structured JSON. Used by the citizen photo-report flow."""
+    """Gemini Vision -> structured JSON, across the model-fallback chain."""
     from google.genai import types
     cfg = types.GenerateContentConfig(
         temperature=temperature, response_mime_type="application/json")
-    try:
+
+    def call(model):
         r = _client().models.generate_content(
-            model=get_settings().gemini_model,
+            model=model,
             contents=[types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
                       prompt],
             config=cfg)
         return _parse_json((r.text or "").strip())
-    except GeminiError:
-        raise
-    except Exception as e:  # noqa: BLE001
-        raise (GeminiRateLimited if _is_429(e) else GeminiError)(str(e)) from e
+
+    return _run(call)
 
 
 def _parse_json(txt: str) -> dict:

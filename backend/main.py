@@ -32,9 +32,12 @@ app.include_router(reports.router)
 
 @app.get("/api/health")
 def health():
+    from .services import gemini
     s = get_settings()
     return {"status": "ok", "project": s.google_cloud_project or None,
-            "dataset": s.bq_dataset, "gemini_configured": bool(s.gemini_api_key)}
+            "dataset": s.bq_dataset, "gemini_configured": bool(s.gemini_api_key),
+            "gemini_models": s.gemini_model_chain,
+            "gemini_active_model": gemini.active_model()}
 
 
 @app.get("/api/cities")
