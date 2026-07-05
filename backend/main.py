@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from .routers import citypulse, risk
+from .routers import citypulse, reports, risk
 from .services.settings import get_settings, list_cities
 
 REPO = Path(__file__).resolve().parents[1]
@@ -27,6 +27,7 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"],
 
 app.include_router(risk.router)
 app.include_router(citypulse.router)
+app.include_router(reports.router)
 
 
 @app.get("/api/health")

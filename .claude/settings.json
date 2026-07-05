@@ -69,7 +69,16 @@
       "Bash(python -c \"import backend.main; print\\('import OK'\\)\")",
       "PowerShell(Get-NetTCPConnection -LocalPort 8080 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }; Start-Sleep 1; \"cleared\")",
       "Bash(python -m uvicorn backend.main:app --host 127.0.0.1 --port 8090 --log-level warning)",
-      "Bash(git -c core.autocrlf=false commit -q -m 'Backend part 2: CityPulse NL-to-SQL analytics \\(Gemini + guardrails\\) *)"
+      "Bash(git -c core.autocrlf=false commit -q -m 'Backend part 2: CityPulse NL-to-SQL analytics \\(Gemini + guardrails\\) *)",
+      "Bash(python -m pip install --quiet --disable-pip-version-check google-cloud-firestore python-multipart)",
+      "Bash(python -c \"import backend.main; print\\('app imports OK with reports router'\\)\")",
+      "Bash(python -m pip install --quiet --disable-pip-version-check pillow)",
+      "Bash(python -)",
+      "Bash(curl -s \"http://127.0.0.1:8090/api/reports?city=blr\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('reports:',len\\(d['reports']\\)\\); [print\\(' ',r.get\\('ward_name'\\),'|',r.get\\('analysis_category_norm'\\),r.get\\('analysis_severity'\\),'| depth',r.get\\('analysis_water_depth_estimate_cm'\\),'|',r.get\\('analysis_summary',''\\)[:80]\\) for r in d['reports'][:3]]\")",
+      "Bash(curl -s -X POST http://127.0.0.1:8090/api/reports -F 'image=@__TRACKED_VAR__;type=image/jpeg' -F lat=12.93 -F lng=77.67)",
+      "Bash(curl -s -X POST http://127.0.0.1:8090/api/reports -F 'image=@__TRACKED_VAR__;type=image/jpeg' -F lat=12.93 -F lng=77.67 -F 'note=Water on the road near the junction')",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('reports:',len\\(d['reports']\\)\\); [print\\(' ',r.get\\('ward_name'\\),'| cat',r.get\\('analysis_category_norm'\\),'| sev',r.get\\('analysis_severity'\\),'| flood',r.get\\('analysis_flood_related'\\),'|',r.get\\('analysis_summary',''\\)[:70]\\) for r in d['reports'][:3]]\")"
     ],
     "additionalDirectories": [
       "\\tmp"
