@@ -1,0 +1,29 @@
+# Keep the build context small & the image lean.
+.git/
+.gitignore
+.venv/
+.varuna/
+**/__pycache__/
+**/*.py[cod]
+.env
+.env.example
+
+# Data & pipeline artifacts (backend reads BigQuery, not local files)
+data/
+ingestion/
+ml/
+deploy/
+
+# Frontend source (only the built dist/ is copied)
+frontend/node_modules/
+frontend/src/
+frontend/public/
+frontend/*.json
+frontend/*.js
+frontend/*.ts
+frontend/vite.config.*
+
+# Docs / misc
+*.md
+!README.md
+scratchpad/

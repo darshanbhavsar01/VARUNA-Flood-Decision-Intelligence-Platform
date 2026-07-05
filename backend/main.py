@@ -43,8 +43,10 @@ def cities():
 
 
 # --- serve built frontend (present after `npm run build`); no-op if absent ---
-if FRONTEND_DIST.exists():
-    app.mount("/assets", StaticFiles(directory=FRONTEND_DIST / "assets"), name="assets")
+if (FRONTEND_DIST / "index.html").exists():
+    if (FRONTEND_DIST / "assets").is_dir():
+        app.mount("/assets", StaticFiles(directory=FRONTEND_DIST / "assets"),
+                  name="assets")
 
     @app.get("/")
     def _index():

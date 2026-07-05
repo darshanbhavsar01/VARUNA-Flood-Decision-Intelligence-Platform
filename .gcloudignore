@@ -1,0 +1,20 @@
+# Controls what `gcloud run deploy --source` uploads to Cloud Build.
+# Explicit file so gcloud does NOT fall back to .gitignore (which ignores
+# frontend/dist/ — needed in the build context). .dockerignore then decides
+# what actually lands in the image.
+.git/
+.gitignore
+.varuna/
+.venv/
+venv/
+**/__pycache__/
+**/*.py[cod]
+
+# large / irrelevant to the container build
+data/
+scratchpad/
+frontend/node_modules/
+node_modules/
+
+# secrets — key is injected via --set-env-vars, never uploaded
+.env
