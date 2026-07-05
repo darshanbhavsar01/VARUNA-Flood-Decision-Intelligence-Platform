@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C \"d:/Users/DELL 3576/Darshan/VARUNA\" status)",
+      "Bash(git --version)",
+      "Bash(gcloud --version)",
+      "Bash(bq version *)",
+      "Bash(pip --version)",
+      "WebFetch(domain:data.opencity.in)",
+      "Bash(python -m pip install --quiet --disable-pip-version-check requests pandas pyyaml rapidfuzz shapely)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(python ingestion/download_data.py --city bengaluru)",
+      "Bash(python ingestion/inspect_raw.py)",
+      "Bash(python ingestion/normalize_geo.py --city bengaluru)"
+    ]
+  }
+}

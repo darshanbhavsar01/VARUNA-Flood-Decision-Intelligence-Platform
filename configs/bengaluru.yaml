@@ -1,0 +1,142 @@
+# VARUNA city onboarding config — Bengaluru (full mode).
+# City onboarding == this file. Nothing about Bengaluru should be hardcoded in Python.
+city_id: blr
+name: Bengaluru
+mode: full            # full | rain_only
+timezone: Asia/Kolkata
+
+# [min_lng, min_lat, max_lng, max_lat]
+bbox: [77.46, 12.83, 77.75, 13.14]
+
+# Rainfall sampling grid — 8 BBMP administrative zone centroids (not one city point).
+# Open-Meteo is queried at each; wards join to nearest grid point.
+rainfall_grid:
+  - {grid_point_id: blr_east,         name: East,               lat: 12.9850, lng: 77.6200}
+  - {grid_point_id: blr_west,         name: West,               lat: 12.9950, lng: 77.5400}
+  - {grid_point_id: blr_south,        name: South,              lat: 12.9100, lng: 77.5850}
+  - {grid_point_id: blr_bommanahalli, name: Bommanahalli,       lat: 12.8950, lng: 77.6300}
+  - {grid_point_id: blr_mahadevapura, name: Mahadevapura,       lat: 12.9900, lng: 77.6900}
+  - {grid_point_id: blr_rrnagar,      name: RajarajeshwariNagar,lat: 12.9250, lng: 77.5150}
+  - {grid_point_id: blr_dasarahalli,  name: Dasarahalli,        lat: 13.0450, lng: 77.5150}
+  - {grid_point_id: blr_yelahanka,    name: Yelahanka,          lat: 13.1000, lng: 77.5960}
+
+data_adapters:
+  ward_geojson: data/raw/blr_wards.geojson
+  grievances:   data/raw/blr_grievances.csv
+  flood_prone:  data/raw/blr_flood_prone.kml
+  # Column names in the raw grievance CSV (verified against the 2020-2025 downloads;
+  # all 6 yearly files share this 8-column schema). No lat/lng in source -> join by ward.
+  grievance_columns:
+    id: "Complaint ID"
+    ward: "Ward Name"
+    category: "Category"
+    sub_category: "Sub Category"     # flood signal ("water stagnation") lives HERE
+    description: null                 # no free-text description column in source
+    created_at: "Grievance Date"
+    status: "Grievance Status"
+    lat: null
+    lng: null
+
+# Shared taxonomy (§7): WATERLOGGING, DRAINAGE, GARBAGE, ROADS, WATER_SUPPLY, STREETLIGHT, OTHER.
+# MATCHING SEMANTICS (see ingestion/normalize_grievances.py):
+#   text = lower(f"{Category} {Sub Category}"); iterate this mapping IN ORDER;
+#   return the first category_norm that has ANY pattern as a substring of text; else OTHER.
+# Order is priority: flood signals FIRST so the greedy "road" pattern can't steal
+# "Road side drains" (a drainage complaint) or "water stagnation" (filed under
+# Category="Road Maintenance"). Patterns are evidence-based from the real 2025 taxonomy
+# (31 categories / 179 sub-categories). YAML insertion order is preserved by the loader.
+category_mapping:
+  WATERLOGGING:
+    - water stagnation
+    - water logging
+    - waterlogging
+    - stagnation of water
+    - flooding
+    - flood
+    - inundat
+  DRAINAGE:
+    - storm water drain
+    - "storm  water drain"      # note: source has a double space
+    - swd
+    - road side drain
+    - roadside drain
+    - drainage blockage
+    - drain blockage
+    - sewerage water left
+    - sewage
+    - manhole
+    - silt
+    - nala
+    - overflow
+    - drain
+  STREETLIGHT:
+    - street light
+    - streetlight
+    - electrical
+    - lamp
+    - lighting
+  GARBAGE:
+    - garbage
+    - solid waste
+    - debris
+    - dumping
+    - sweeping
+    - plastic
+    - sanitation
+  WATER_SUPPLY:
+    - water crisis
+    - water supply
+    - drinking water
+    - no water
+    - water leakage
+    - water pipe
+    - bwssb
+    - water related issue
+  ROADS:
+    - pothole
+    - footpath
+    - pavement
+    - road cutting
+    - road infrastructure
+    - road maintenance
+    - road
+    - tar
+  # anything unmatched -> OTHER
+
+# Ward-name join (grievance raw name -> canonical 198-ward KML name).
+# Match order: exact(normalized) -> ward_aliases -> exact(despaced) -> fuzzy(despaced ratio).
+# ward_aliases: curated, deterministic fixes for real wards whose transliteration
+# scores below the fuzzy threshold (verified by hand against the diagnosis). This is
+# the honest, auditable way to close the messy join CLAUDE.md §5/§11 warned about.
+ward_join:
+  fuzzy_threshold: 84        # despaced fuzz.ratio; below this -> unmatched
+  aliases:
+    Hoodi: Hudi
+    Hagadooru: Hagadur
+    Ulsoor: Halsoor
+    Yadiyuru: Yediyur
+    Gali Anjaneya Swamy Temple Ward: Gali Anjenaya Temple ward
+    Banaswadi: Banasavadi
+  # Known grievance wards ABSENT from the 2015/198-ward KML (renamed or from a
+  # different delimitation). Forced to unmatched so fuzzy can't mis-assign them.
+  # Documented as a limitation; ~8% of rows. Fixable by sourcing a matching-vintage
+  # ward map. Listed here for transparency, not used to fabricate geometry.
+  known_absent:
+    - Jnanabharathi Ward
+    - Someshwara
+    - Kavalbyrasandra
+    - Vishwanathnagenahalli
+    - Visvesvarapuram
+    - Sri Nagar
+    - Vijay Nagar
+    - Subedarapalya
+    - Shankaramata
+    - Shakthiganapathi Nagar
+    - Rajamahal
+    - NON Ward
+
+# Categories treated as flood-signal for the risk-model label (§8a).
+# WATERLOGGING is the strong signal; DRAINAGE is included but carries routine
+# year-round drain-maintenance requests -> the model's ward-baseline / velocity
+# features (§8a) disentangle chronic volume from rain-driven spikes.
+flood_signal_categories: [WATERLOGGING, DRAINAGE]

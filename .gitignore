@@ -1,0 +1,37 @@
+# --- Data: raw downloads are large & re-downloadable; keep only small processed samples ---
+data/raw/
+data/processed/*.csv
+data/processed/*.parquet
+!data/processed/sample_*.csv
+
+# --- Secrets ---
+.env
+*.key
+service-account*.json
+!configs/*.yaml
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# --- Node / frontend ---
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# --- Vector store / models ---
+*.chroma/
+chroma_db/
+*.lgb
+*.txt.model
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+*.log
