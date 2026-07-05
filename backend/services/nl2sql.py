@@ -162,6 +162,8 @@ def run(question: str) -> dict:
             cols = list(rows[0].keys()) if rows else []
             return {"ok": True, "sql": sql, "columns": cols,
                     "rows": rows, "bytes_scanned": scanned, "attempts": attempt + 1}
+        except gemini.GeminiRateLimited:
+            raise                                  # let the router show a clear message
         except Exception as e:  # noqa: BLE001
             attempts.append(str(e)[:300])
     return {"ok": False, "sql": sql, "error": attempts[-1] if attempts else "unknown",

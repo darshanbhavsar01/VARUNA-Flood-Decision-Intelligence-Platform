@@ -7,12 +7,22 @@ from __future__ import annotations
 
 import functools
 import json
+import time
 
 from .settings import get_settings
 
 
 class GeminiError(RuntimeError):
     pass
+
+
+class GeminiRateLimited(GeminiError):
+    """Free-tier quota / 429 — caller can show a 'try again shortly' message."""
+
+
+def _is_429(exc) -> bool:
+    s = str(exc)
+    return "429" in s or "RESOURCE_EXHAUSTED" in s or "quota" in s.lower()
 
 
 @functools.lru_cache
@@ -33,12 +43,21 @@ def generate(prompt: str, system: str | None = None,
         system_instruction=system,
         response_mime_type="application/json" if as_json else None,
     )
-    try:
-        r = _client().models.generate_content(
-            model=get_settings().gemini_model, contents=prompt, config=cfg)
-        return (r.text or "").strip()
-    except Exception as e:  # noqa: BLE001
-        raise GeminiError(str(e)) from e
+    last = None
+    for attempt in range(3):                      # brief backoff on transient 429s
+        try:
+            r = _client().models.generate_content(
+                model=get_settings().gemini_model, contents=prompt, config=cfg)
+            return (r.text or "").strip()
+        except Exception as e:  # noqa: BLE001
+            last = e
+            if _is_429(e) and attempt < 2:
+                time.sleep(2 * (attempt + 1))
+                continue
+            break
+    if _is_429(last):
+        raise GeminiRateLimited(str(last))
+    raise GeminiError(str(last))
 
 
 def generate_json(prompt: str, system: str | None = None,
@@ -63,7 +82,7 @@ def analyze_image(image_bytes: bytes, mime_type: str, prompt: str,
     except GeminiError:
         raise
     except Exception as e:  # noqa: BLE001
-        raise GeminiError(str(e)) from e
+        raise (GeminiRateLimited if _is_429(e) else GeminiError)(str(e)) from e
 
 
 def _parse_json(txt: str) -> dict:

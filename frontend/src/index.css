@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root { height: 100%; }
+body { margin: 0; background: #0a1018; color: #e6eef5; }
+
+/* Leaflet dark tweaks */
+.leaflet-container { background: #0a1018; font: inherit; }
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background: #16202e; color: #e6eef5; box-shadow: 0 4px 20px rgba(0,0,0,.5);
+}
+.leaflet-bar a { background: #16202e; color: #e6eef5; border-color: #24455f; }
+.leaflet-bar a:hover { background: #1d2a3a; }
+
+/* thin scrollbars */
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-thumb { background: #24455f; border-radius: 4px; }
+*::-webkit-scrollbar-track { background: transparent; }

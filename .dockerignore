@@ -14,14 +14,10 @@ ingestion/
 ml/
 deploy/
 
-# Frontend source (only the built dist/ is copied)
+# Frontend: the Node build stage needs source (package*.json, src/, index.html,
+# configs). Only these are excluded:
 frontend/node_modules/
-frontend/src/
-frontend/public/
-frontend/*.json
-frontend/*.js
-frontend/*.ts
-frontend/vite.config.*
+frontend/dist/
 
 # Docs / misc
 *.md

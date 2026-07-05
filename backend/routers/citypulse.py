@@ -78,8 +78,13 @@ def chat(body: ChatIn):
         return {"ok": False, "error": "empty question"}
     try:
         result = nl2sql.run(q)
+    except gemini.GeminiRateLimited:
+        return {"ok": False, "rate_limited": True, "rows": [], "columns": [],
+                "narrative": "The AI is momentarily rate-limited (Gemini free tier). "
+                             "Please try again in a few seconds."}
     except gemini.GeminiError as e:
-        return {"ok": False, "error": f"LLM unavailable: {e}", "rows": [], "columns": []}
+        return {"ok": False, "error": f"LLM unavailable: {e}", "rows": [], "columns": [],
+                "narrative": "The AI service is temporarily unavailable."}
 
     if not result["ok"]:
         return {"ok": False, "sql": result.get("sql"),
