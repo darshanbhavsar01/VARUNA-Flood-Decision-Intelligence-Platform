@@ -4,14 +4,20 @@
 
 ## One command
 ```bash
-# from repo root; GEMINI_API_KEY comes from your .env
+# from repo root; GEMINI_API_KEY + GEMINI_MODELS come from your .env.
+# NOTE the ^##^ custom delimiter: GEMINI_MODELS contains commas, so we can't use
+# the default comma-separated --set-env-vars form.
 set -a; source .env; set +a
 gcloud run deploy varuna --source . \
   --project=main-aura-398409 --region=asia-south1 \
   --allow-unauthenticated --min-instances=0 --memory=512Mi --timeout=120 --quiet \
-  --set-env-vars="GEMINI_API_KEY=${GEMINI_API_KEY},GEMINI_MODEL=gemini-flash-latest,\
-GOOGLE_CLOUD_PROJECT=main-aura-398409,BQ_DATASET=varuna,BQ_LOCATION=asia-south1"
+  --set-env-vars="^##^GEMINI_API_KEY=${GEMINI_API_KEY}##GEMINI_MODELS=${GEMINI_MODELS}##GOOGLE_CLOUD_PROJECT=main-aura-398409##BQ_DATASET=varuna##BQ_LOCATION=asia-south1"
 ```
+
+**Gemini quota resilience:** `GEMINI_MODELS` is an ordered fallback chain. Each
+model has its own free-tier quota bucket, so when one returns 429 the app advances
+to the next (and skips 404s for models that don't exist yet). `/api/health` shows
+the chain and the currently-active model.
 
 ## How it fits together
 - **One container** (`Dockerfile`) serves the FastAPI API and the built frontend
