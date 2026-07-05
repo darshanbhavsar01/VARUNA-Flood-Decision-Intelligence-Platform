@@ -40,16 +40,16 @@ def evaluate_split(client, split):
     # PR-AUC (average precision) computed from predicted probabilities
     pr = q1(client, f"""
       WITH p AS (
-        SELECT label, (SELECT prob FROM UNNEST(predicted_label_probs)
-                       WHERE label=1) AS score
+        SELECT label AS y, (SELECT prob FROM UNNEST(predicted_label_probs)
+                            WHERE label=1) AS score
         FROM ML.PREDICT(MODEL `{MODEL}`,
           (SELECT * EXCEPT({DROP_COLS}) FROM `{FEATURES}` WHERE split='{split}'))
       ),
       ranked AS (
-        SELECT label, score,
-          SUM(label) OVER (ORDER BY score DESC) AS tp,
-          COUNT(*)  OVER (ORDER BY score DESC) AS k,
-          SUM(label) OVER () AS total_pos
+        SELECT y, score,
+          SUM(y) OVER (ORDER BY score DESC) AS tp,
+          COUNT(*) OVER (ORDER BY score DESC) AS k,
+          SUM(y) OVER () AS total_pos
         FROM p
       ),
       pts AS (   -- precision/recall at each distinct score threshold
@@ -64,17 +64,17 @@ def evaluate_split(client, split):
     # recall@top-20 wards per day
     r20 = q1(client, f"""
       WITH p AS (
-        SELECT day, ward_id, label,
+        SELECT day, label AS y,
                (SELECT prob FROM UNNEST(predicted_label_probs) WHERE label=1) score
         FROM ML.PREDICT(MODEL `{MODEL}`,
           (SELECT * FROM `{FEATURES}` WHERE split='{split}'))
       ),
       ranked AS (
-        SELECT day, label, ROW_NUMBER() OVER (PARTITION BY day ORDER BY score DESC) rk
+        SELECT day, y, ROW_NUMBER() OVER (PARTITION BY day ORDER BY score DESC) rk
         FROM p
       ),
       per_day AS (
-        SELECT day, SUM(label) pos, SUM(IF(rk<=20, label, 0)) caught
+        SELECT day, SUM(y) pos, SUM(IF(rk<=20, y, 0)) caught
         FROM ranked GROUP BY day HAVING pos > 0
       )
       SELECT ROUND(AVG(caught/pos),4) recall_at_20 FROM per_day
@@ -91,6 +91,10 @@ def main() -> int:
     args = ap.parse_args()
     if not os.environ.get("GOOGLE_CLOUD_PROJECT"):
         sys.exit("Set GOOGLE_CLOUD_PROJECT + `gcloud auth application-default login`.")
+    import yaml
+    cfg = yaml.safe_load(
+        (REPO / "configs" / f"{args.city}.yaml").read_text(encoding="utf-8"))
+    city_id = cfg["city_id"]   # canonical id ('blr'), NOT the config filename
     from google.cloud import bigquery
     client = bigquery.Client(location=LOCATION)
 
@@ -147,14 +151,14 @@ def main() -> int:
     print(f"\nScoring {score_date} -> risk_scores (horizon 24h) with explanations...")
     client.query(f"""
       DELETE FROM `{DATASET}.risk_scores`
-      WHERE city_id='{args.city}' AND horizon_hrs=24
+      WHERE city_id='{city_id}' AND horizon_hrs=24
         AND DATE(computed_at)=DATE('{score_date}')
     """).result()
     client.query(f"""
       INSERT INTO `{DATASET}.risk_scores`
         (city_id, ward_id, horizon_hrs, score, computed_at, top_features)
-      SELECT '{args.city}' AS city_id, ward_id, 24 AS horizon_hrs,
-        (SELECT prob FROM UNNEST(predicted_label_probs) WHERE label=1) AS score,
+      SELECT '{city_id}' AS city_id, ward_id, 24 AS horizon_hrs,
+        IF(predicted_label=1, probability, 1-probability) AS score,
         TIMESTAMP('{score_date}') AS computed_at,
         TO_JSON(ARRAY(
           SELECT AS STRUCT a.feature, ROUND(a.attribution,4) AS attribution
@@ -167,7 +171,7 @@ def main() -> int:
     """).result()
     top = q1(client, f"""
       SELECT COUNT(*) n, ROUND(MAX(score),3) hi FROM `{DATASET}.risk_scores`
-      WHERE city_id='{args.city}' AND DATE(computed_at)=DATE('{score_date}')
+      WHERE city_id='{city_id}' AND DATE(computed_at)=DATE('{score_date}')
     """)
     print(f"  scored {top.n} wards for {score_date}; max risk={top.hi}")
     return 0

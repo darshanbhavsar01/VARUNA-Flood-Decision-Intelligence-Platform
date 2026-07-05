@@ -20,6 +20,17 @@ Citizen complaints are a city's largest untapped sensor network. VARUNA turns th
 - **No drain-network data:** no public drain shapefile or real-time drain sensors exist. Architecture is "sensor-ready".
 - **Ward-name joins:** grievance ward strings vs. GeoJSON ward names require fuzzy matching; residual mismatches are documented in the join report.
 - **Simulated elements:** resource inventory (pumps/crews) and alert dispatch are clearly labeled *simulated* in UI and code.
+- **Risk model leans on ward baseline.** The strongest feature is `ward_flood_baseline` (chronic per-ward complaint rate, gain ≈ 0.58) — i.e. the model partly learns "which wards habitually complain." Dynamic risk still comes from rainfall + citizen-complaint velocity (next-strongest features), and notably `velocity_prev_3d` (the human-sensor signal) outranks the rain forecast. Honest reading: on a dry day risk ≈ a ward's chronic propensity; rain and complaint spikes move it. Framed as *complaint-verified waterlogging risk*, not ground-truth flood prediction.
+
+## Risk model — current numbers (temporal eval, §8a)
+Trained on ≤2023, validated 2024, tested 2025 (incl. the real May-2025 red-alert event). Heavy class imbalance (~1–2.5% positive) → PR-AUC & recall@top-20, not accuracy.
+
+| split | ROC-AUC | PR-AUC | recall@top-20 wards/day |
+|---|---|---|---|
+| val (2024) | 0.866 | 0.158 | 0.563 |
+| test (2025) | 0.866 | 0.207 | 0.594 |
+
+PR-AUC is ~8–10× the positive base rate. Sanity check: the top-ranked wards (Bellandur, Begur, Horamavu) are well-known Bengaluru flooding hotspots. Full report: `ml/eval_report.md`.
 
 ## Data sources
 See [CLAUDE.md §5](CLAUDE.md). All datasets are real & public (OpenCity BBMP grievances, BBMP flood-prone locations, ward GeoJSON, Open-Meteo rainfall).
