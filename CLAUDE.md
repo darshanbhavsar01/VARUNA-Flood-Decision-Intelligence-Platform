@@ -218,3 +218,7 @@ varuna/
 - Prefer boring, working code over clever code. P0 completeness beats P1 sophistication.
 - Every agent/LLM feature must degrade gracefully (API error → readable fallback, never a blank screen during judging).
 - Commit early, commit often; keep `gcloud run deploy` working at all times after step 3.
+
+
+## Git Commit Guidelines
+- Do not include AI attribution or co-author lines in commit messages.
