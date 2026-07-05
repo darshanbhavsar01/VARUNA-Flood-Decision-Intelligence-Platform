@@ -5,6 +5,7 @@ import RiskMap from "./components/RiskMap.jsx";
 import WardPanel from "./components/WardPanel.jsx";
 import RankedList from "./components/RankedList.jsx";
 import CityPulse from "./components/CityPulse.jsx";
+import ResponsePlan from "./components/ResponsePlan.jsx";
 import { BAND_COLORS, BAND_LABEL } from "./lib/format.js";
 
 const CITY = "blr";
@@ -84,6 +85,7 @@ export default function App() {
           <div className="flex border-b border-ink-600">
             {[
               ["wards", "Ward risk"],
+              ["plan", "Response Plan"],
               ["citypulse", "CityPulse"],
             ].map(([id, label]) => (
               <button
@@ -99,7 +101,7 @@ export default function App() {
             ))}
           </div>
 
-          {tab === "wards" ? (
+          {tab === "wards" && (
             <div className="flex-1 flex flex-col min-h-0">
               <div className="border-b border-ink-600">
                 <WardPanel wardId={selectedWard} city={CITY} horizon={HORIZON} />
@@ -115,9 +117,13 @@ export default function App() {
                 />
               </div>
             </div>
-          ) : (
-            <CityPulse />
           )}
+          {tab === "plan" && (
+            <ResponsePlan
+              focus={ranked.find((w) => w.ward_id === selectedWard)?.ward_name}
+            />
+          )}
+          {tab === "citypulse" && <CityPulse />}
         </aside>
       </div>
     </div>

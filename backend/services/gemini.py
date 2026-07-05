@@ -128,6 +128,21 @@ def analyze_image(image_bytes: bytes, mime_type: str, prompt: str,
     return _run(call)
 
 
+EMBED_MODEL = "gemini-embedding-001"
+EMBED_DIM = 768
+
+
+def embed(text: str, task_type: str = "RETRIEVAL_QUERY") -> list[float]:
+    """Single-text embedding (matches the SOP index: gemini-embedding-001, 768d)."""
+    from google.genai import types
+    cfg = types.EmbedContentConfig(task_type=task_type, output_dimensionality=EMBED_DIM)
+    try:
+        r = _client().models.embed_content(model=EMBED_MODEL, contents=text, config=cfg)
+        return list(r.embeddings[0].values)
+    except Exception as e:  # noqa: BLE001
+        raise (GeminiRateLimited if _is_429(e) else GeminiError)(str(e)) from e
+
+
 def _parse_json(txt: str) -> dict:
     try:
         return json.loads(txt)

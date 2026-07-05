@@ -31,6 +31,8 @@ export const api = {
     getJSON(`/api/risk/ward/${wardId}?city=${city}&horizon=${horizon}`),
   cityPulse: (question) => postJSON("/api/citypulse/chat", { question }),
   reports: (city) => getJSON(`/api/reports?city=${city}`),
+  agentStatus: () => getJSON("/api/agents/status"),
+  responsePlan: (focus) => postJSON("/api/agents/response-plan", { focus: focus || null }),
 };
 
 export default api;

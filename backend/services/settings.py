@@ -30,6 +30,7 @@ class Settings(BaseSettings):
         "gemini-2.5-flash-lite,gemini-2.0-flash-lite,gemini-flash-lite-latest"
     )
     gemini_model: str = ""   # legacy single-model override; prepended if set
+    agent_model: str = "gemini-2.5-flash"   # ADK agents (single model; has quota)
 
     @property
     def gemini_model_chain(self) -> list[str]:

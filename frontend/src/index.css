@@ -13,6 +13,17 @@ body { margin: 0; background: #0a1018; color: #e6eef5; }
 .leaflet-bar a { background: #16202e; color: #e6eef5; border-color: #24455f; }
 .leaflet-bar a:hover { background: #1d2a3a; }
 
+/* markdown plan styling (no typography plugin) */
+.prose-plan h2 { font-size: .95rem; font-weight: 700; color: #4fc3f7;
+  margin: .9rem 0 .4rem; }
+.prose-plan h2:first-child { margin-top: 0; }
+.prose-plan p { margin: .4rem 0; color: #cdd9e5; }
+.prose-plan ol { list-style: decimal; margin: .3rem 0 .3rem 1.1rem; }
+.prose-plan ul { list-style: disc; margin: .3rem 0 .3rem 1.1rem; }
+.prose-plan li { margin: .35rem 0; color: #cdd9e5; }
+.prose-plan strong { color: #e6eef5; }
+.prose-plan em { color: #9db2c4; }
+
 /* thin scrollbars */
 *::-webkit-scrollbar { width: 8px; height: 8px; }
 *::-webkit-scrollbar-thumb { background: #24455f; border-radius: 4px; }
