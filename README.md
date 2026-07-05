@@ -9,9 +9,12 @@ Citizen complaints are a city's largest untapped sensor network. VARUNA turns th
 ## Status
 🚧 Under active construction. See [CLAUDE.md](CLAUDE.md) for the full plan and build order.
 
-**Live demo (API + landing):** https://varuna-229692962627.asia-south1.run.app
-Data foundation, flood-risk model, and backend API (risk map, CityPulse NL-to-SQL,
-citizen photo reports) are deployed on Cloud Run. Command/Citizen View UI is next.
+**Live demo:** https://varuna-229692962627.asia-south1.run.app
+Deployed on Cloud Run: the **Command View** dashboard (ward-level flood-risk
+choropleth of all 198 wards, click-through explainability panel with model feature
+attributions, and the CityPulse NL-to-SQL analytics chat), plus the citizen
+photo-report → Vision → Firestore flow. Citizen View, the ADK Response Planner, and
+the what-if simulator are next.
 
 ## Architecture (target)
 - **Frontend + API:** React (Vite/Tailwind/Leaflet) served by FastAPI, single container on **Cloud Run** (scale-to-zero).
