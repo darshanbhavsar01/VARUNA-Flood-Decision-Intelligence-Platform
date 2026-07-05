@@ -130,7 +130,9 @@ def main() -> int:
     # ward join — match on the ~unique raw names only, then map (fast for 700k rows)
     uniq = out["ward_name_raw"].dropna().unique()
     lut = {name: match(name) for name in uniq}
-    out["ward_id"] = out["ward_name_raw"].map(lambda n: lut.get(n, (None,))[0])
+    # nullable integer so the CSV writes "14"/"" (not "14.0") -> loads clean into BQ INT64
+    out["ward_id"] = out["ward_name_raw"].map(
+        lambda n: lut.get(n, (None,))[0]).astype("Int64")
     out["ward_name_canon"] = out["ward_name_raw"].map(
         lambda n: lut.get(n, (None, None))[1])
     match_method = out["ward_name_raw"].map(lambda n: lut.get(n, (None, None, "unmatched"))[2])

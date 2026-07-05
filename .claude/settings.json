@@ -11,7 +11,23 @@
       "Bash(echo \"exit: $?\")",
       "Bash(python ingestion/download_data.py --city bengaluru)",
       "Bash(python ingestion/inspect_raw.py)",
-      "Bash(python ingestion/normalize_geo.py --city bengaluru)"
+      "Bash(python ingestion/normalize_geo.py --city bengaluru)",
+      "Bash(gcloud config *)",
+      "Bash(gcloud auth *)",
+      "Bash(gcloud beta *)",
+      "Bash(gcloud services *)",
+      "Bash(python -m pip install --quiet --disable-pip-version-check google-cloud-bigquery)",
+      "Bash(echo \"pip exit: $?\")",
+      "Bash(python -c \"from google.cloud import bigquery; print\\('bigquery client import OK'\\)\")",
+      "Bash(gcloud billing *)",
+      "Bash(echo \"enable exit: $?\")",
+      "Bash(python -c \"import sys; print\\(sys.executable\\)\")",
+      "Bash(python -c \"import yaml, google.cloud.bigquery; print\\('both import OK'\\)\")",
+      "Bash(python -m pip install --quiet --disable-pip-version-check pyyaml pandas rapidfuzz shapely requests google-cloud-bigquery)",
+      "Bash(python -c \"import yaml, pandas, rapidfuzz, shapely, requests; from google.cloud import bigquery; print\\('all imports OK in .varuna venv'\\)\")",
+      "Bash(python ingestion/normalize_grievances.py --city bengaluru)",
+      "Bash(export GOOGLE_CLOUD_PROJECT=main-aura-398409)",
+      "Bash(bq query --use_legacy_sql=false --format=pretty --project_id=main-aura-398409 ' *)"
     ]
   }
 }

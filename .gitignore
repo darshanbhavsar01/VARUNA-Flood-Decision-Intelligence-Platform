@@ -14,6 +14,7 @@ service-account*.json
 __pycache__/
 *.py[cod]
 .venv/
+.varuna/
 venv/
 env/
 *.egg-info/
