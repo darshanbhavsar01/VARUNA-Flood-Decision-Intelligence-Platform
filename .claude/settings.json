@@ -27,7 +27,11 @@
       "Bash(python -c \"import yaml, pandas, rapidfuzz, shapely, requests; from google.cloud import bigquery; print\\('all imports OK in .varuna venv'\\)\")",
       "Bash(python ingestion/normalize_grievances.py --city bengaluru)",
       "Bash(export GOOGLE_CLOUD_PROJECT=main-aura-398409)",
-      "Bash(bq query --use_legacy_sql=false --format=pretty --project_id=main-aura-398409 ' *)"
+      "Bash(bq query --use_legacy_sql=false --format=pretty --project_id=main-aura-398409 ' *)",
+      "Bash(python ingestion/openmeteo_puller.py --city bengaluru --mode historical --start 2025-05-18 --end 2025-05-20 --dry-run)",
+      "Bash(git add *)",
+      "Bash(git -c core.autocrlf=false commit -q -m 'Rainfall ingestion: Open-Meteo historical backfill 2020-2025 *)",
+      "Bash(bq query *)"
     ]
   }
 }
