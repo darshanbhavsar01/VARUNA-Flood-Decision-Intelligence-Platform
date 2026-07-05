@@ -34,58 +34,85 @@ def _is_missing(exc) -> bool:
     return "404" in s or "not_found" in s or "not found" in s
 
 
+def _is_bad_key(exc) -> bool:
+    s = str(exc).lower()
+    return ("api key not valid" in s or "api_key_invalid" in s
+            or "invalid api key" in s or "401" in s or "unauthenticated" in s
+            or "permission_denied" in s or "403" in s)
+
+
 def _skippable(exc) -> bool:
-    return _is_429(exc) or _is_missing(exc)
+    # quota, transient overload, missing model, or a dead/invalid key -> try next
+    s = str(exc).lower()
+    return (_is_429(exc) or _is_missing(exc) or _is_bad_key(exc)
+            or "503" in s or "unavailable" in s or "overloaded" in s)
 
 
 @functools.lru_cache
-def _client():
-    s = get_settings()
-    if not s.gemini_api_key:
-        raise GeminiError("GEMINI_API_KEY not configured")
+def _client(api_key: str):
     from google import genai
-    return genai.Client(api_key=s.gemini_api_key)
+    return genai.Client(api_key=api_key)
 
 
-# Persistent cursor: once a model works we keep using it until IT exhausts, then
-# advance. Wraps around so recovered models get retried on the next full cycle.
+def _attempts() -> list[tuple[str, str]]:
+    """Flat (api_key, model) attempt order: exhaust the primary key's whole model
+    chain before moving to the next (backup) key."""
+    s = get_settings()
+    keys = s.gemini_api_keys
+    if not keys:
+        raise GeminiError("GEMINI_API_KEY not configured")
+    chain = s.gemini_model_chain
+    if not chain:
+        raise GeminiError("no Gemini models configured")
+    return [(k, m) for k in keys for m in chain]
+
+
+# Persistent cursor over the (key, model) attempt list: once one works we keep
+# using it until it exhausts, then advance. Wraps around so recovered
+# keys/models are retried on the next cycle.
 _cursor = 0
 _cursor_lock = threading.Lock()
 _last_model = None
+_last_key_index = 0
 
 
 def active_model() -> str | None:
     return _last_model
 
 
+def active_key_index() -> int:
+    return _last_key_index
+
+
 def _run(call):
-    """Try `call(model)` across the chain starting at the cursor; return first
-    success. Skip 429/404 models. Raise GeminiRateLimited if all are exhausted."""
-    global _cursor, _last_model
-    chain = get_settings().gemini_model_chain
-    if not chain:
-        raise GeminiError("no Gemini models configured")
-    n = len(chain)
+    """Try `call(client, model)` across every (key, model) starting at the cursor;
+    return the first success. Skip 429/503/404. Raise GeminiRateLimited only when
+    ALL keys x models are exhausted."""
+    global _cursor, _last_model, _last_key_index
+    attempts = _attempts()
+    keys = get_settings().gemini_api_keys
+    n = len(attempts)
     start = _cursor % n
     exhausted = []
     for i in range(n):
         idx = (start + i) % n
-        model = chain[idx]
+        api_key, model = attempts[idx]
         try:
-            result = call(model)
+            result = call(_client(api_key), model)
             with _cursor_lock:
                 _cursor = idx
             _last_model = model
+            _last_key_index = keys.index(api_key)
             return result
         except GeminiError:
             raise
         except Exception as e:  # noqa: BLE001
             if _skippable(e):
-                exhausted.append(model)
+                exhausted.append(f"key{keys.index(api_key)}:{model}")
                 continue
             raise GeminiError(f"{model}: {e}") from e
-    raise GeminiRateLimited(
-        "all Gemini models exhausted: " + ", ".join(exhausted))
+    raise GeminiRateLimited("all Gemini keys x models exhausted: "
+                            + ", ".join(exhausted))
 
 
 def generate(prompt: str, system: str | None = None,
@@ -97,8 +124,8 @@ def generate(prompt: str, system: str | None = None,
         response_mime_type="application/json" if as_json else None,
     )
 
-    def call(model):
-        r = _client().models.generate_content(model=model, contents=prompt, config=cfg)
+    def call(client, model):
+        r = client.models.generate_content(model=model, contents=prompt, config=cfg)
         return (r.text or "").strip()
 
     return _run(call)
@@ -117,8 +144,8 @@ def analyze_image(image_bytes: bytes, mime_type: str, prompt: str,
     cfg = types.GenerateContentConfig(
         temperature=temperature, response_mime_type="application/json")
 
-    def call(model):
-        r = _client().models.generate_content(
+    def call(client, model):
+        r = client.models.generate_content(
             model=model,
             contents=[types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
                       prompt],
@@ -133,14 +160,23 @@ EMBED_DIM = 768
 
 
 def embed(text: str, task_type: str = "RETRIEVAL_QUERY") -> list[float]:
-    """Single-text embedding (matches the SOP index: gemini-embedding-001, 768d)."""
+    """Single-text embedding (matches the SOP index: gemini-embedding-001, 768d).
+    Tries each API key on quota (429) — one embedding model, multiple key buckets."""
     from google.genai import types
     cfg = types.EmbedContentConfig(task_type=task_type, output_dimensionality=EMBED_DIM)
-    try:
-        r = _client().models.embed_content(model=EMBED_MODEL, contents=text, config=cfg)
-        return list(r.embeddings[0].values)
-    except Exception as e:  # noqa: BLE001
-        raise (GeminiRateLimited if _is_429(e) else GeminiError)(str(e)) from e
+    keys = get_settings().gemini_api_keys
+    last = None
+    for api_key in keys:
+        try:
+            r = _client(api_key).models.embed_content(
+                model=EMBED_MODEL, contents=text, config=cfg)
+            return list(r.embeddings[0].values)
+        except Exception as e:  # noqa: BLE001
+            last = e
+            if _skippable(e):
+                continue
+            raise GeminiError(str(e)) from e
+    raise (GeminiRateLimited if _is_429(last) else GeminiError)(str(last))
 
 
 def _parse_json(txt: str) -> dict:

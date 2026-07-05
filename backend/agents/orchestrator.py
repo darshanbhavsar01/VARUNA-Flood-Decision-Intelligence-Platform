@@ -17,14 +17,6 @@ from ..services.settings import get_settings
 from . import tools
 
 
-def _configure_env():
-    s = get_settings()
-    # ADK reads GOOGLE_API_KEY; use the AI Studio key, not Vertex (§6).
-    if s.gemini_api_key:
-        os.environ.setdefault("GOOGLE_API_KEY", s.gemini_api_key)
-    os.environ.setdefault("GOOGLE_GENAI_USE_VERTEXAI", "0")
-
-
 RISK_ANALYST_INSTRUCTION = """
 You are VARUNA's RiskAnalyst for Bengaluru urban flooding. Assess the CURRENT
 situation for a control-room officer.
@@ -63,16 +55,22 @@ Note in one line that the resource inventory is simulated demo data.
 
 
 def _is_retriable(exc) -> bool:
-    """Quota (429) OR transient overload (503) OR missing model (404) -> try next."""
+    """Quota (429), transient overload (503), missing model (404), or a dead/invalid
+    key (401/403) -> try the next (key, model)."""
     s = str(exc).lower()
     return any(k in s for k in
                ("429", "resource_exhausted", "quota", "503", "unavailable",
-                "high demand", "overloaded", "404", "not_found"))
+                "high demand", "overloaded", "404", "not_found",
+                "401", "unauthenticated", "403", "permission_denied",
+                "api key not valid", "api_key_invalid"))
 
 
 @functools.lru_cache
-def _build_agent(agent_name: str, model: str):
-    _configure_env()
+def _build_agent(agent_name: str, model: str, api_key: str):
+    # api_key is part of the cache key so each key gets its own agent instance
+    # (ADK reads GOOGLE_API_KEY from env, which we set before build + run).
+    os.environ["GOOGLE_API_KEY"] = api_key
+    os.environ.setdefault("GOOGLE_GENAI_USE_VERTEXAI", "0")
     from google.adk.agents import LlmAgent
     if agent_name == "risk_analyst":
         return LlmAgent(
@@ -88,29 +86,33 @@ def _build_agent(agent_name: str, model: str):
                tools.get_resource_inventory])
 
 
-def _agent_model_chain() -> list[str]:
-    # ADK uses one model per run; on quota we retry the whole run with the next.
-    # Start with the configured agent_model, then the general fallback chain.
+def _agent_attempts() -> list[tuple[str, str]]:
+    # (api_key, model): exhaust the model chain on each key before moving to the
+    # next (backup) key. Prefer the configured agent_model first per key.
     s = get_settings()
     chain = [s.agent_model] + [m for m in s.gemini_model_chain if m != s.agent_model]
-    return chain
+    return [(k, m) for k in s.gemini_api_keys for m in chain]
 
 
 async def run_agent(agent_name: str, prompt: str) -> dict:
-    """Run an agent to completion, retrying across the model chain on quota (429).
-    Returns {text, tools_used, sop_citations, model}."""
+    """Run an agent to completion, retrying across every (key, model) on
+    quota/overload (429/503/404). Returns {text, tools_used, sop_citations, model}."""
+    keys = get_settings().gemini_api_keys
     last_err = None
-    for model in _agent_model_chain():
+    for api_key, model in _agent_attempts():
+        os.environ["GOOGLE_API_KEY"] = api_key   # ADK reads this at call time
+        os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "0"
         try:
-            out = await _run_once(_build_agent(agent_name, model), prompt)
+            out = await _run_once(_build_agent(agent_name, model, api_key), prompt)
             out["model"] = model
+            out["key_index"] = keys.index(api_key)
             return out
         except Exception as e:  # noqa: BLE001
             last_err = e
             if _is_retriable(e):
-                continue          # exhausted/overloaded -> try the next model
+                continue          # exhausted/overloaded -> next (key, model)
             raise
-    raise last_err or RuntimeError("no agent model succeeded")
+    raise last_err or RuntimeError("no agent (key, model) succeeded")
 
 
 async def _run_once(agent, prompt: str) -> dict:

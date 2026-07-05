@@ -38,7 +38,9 @@ def health():
     return {"status": "ok", "project": s.google_cloud_project or None,
             "dataset": s.bq_dataset, "gemini_configured": bool(s.gemini_api_key),
             "gemini_models": s.gemini_model_chain,
-            "gemini_active_model": gemini.active_model()}
+            "gemini_keys": len(s.gemini_api_keys),
+            "gemini_active_model": gemini.active_model(),
+            "gemini_active_key_index": gemini.active_key_index()}
 
 
 @app.get("/api/cities")

@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=None, extra="ignore")
 
     gemini_api_key: str = ""
+    # Backup AI-Studio keys (comma-separated). When every model is exhausted on the
+    # primary key, the whole model chain is retried on each backup key in turn —
+    # each key is a separate account with its own quota.
+    gemini_backup_keys: str = ""
     # Ordered fallback chain: on quota (429) or missing model (404) we advance to
     # the next. Each model has its own free-tier quota bucket, so this multiplies
     # effective capacity. Comma-separated; edit via GEMINI_MODELS env var.
@@ -31,6 +35,19 @@ class Settings(BaseSettings):
     )
     gemini_model: str = ""   # legacy single-model override; prepended if set
     agent_model: str = "gemini-2.5-flash"   # ADK agents (single model; has quota)
+
+    @property
+    def gemini_api_keys(self) -> list[str]:
+        """Primary key first, then backup keys (deduped, non-empty)."""
+        raw = [self.gemini_api_key] + [
+            k.strip() for k in self.gemini_backup_keys.split(",")]
+        seen, out = set(), []
+        for k in raw:
+            k = (k or "").strip()
+            if k and k not in seen:
+                seen.add(k)
+                out.append(k)
+        return out
 
     @property
     def gemini_model_chain(self) -> list[str]:
