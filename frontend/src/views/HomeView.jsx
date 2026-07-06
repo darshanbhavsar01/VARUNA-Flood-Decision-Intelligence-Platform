@@ -1,14 +1,14 @@
 import ViewSwitch from "../components/ViewSwitch.jsx";
 
 const FEATURES = [
-  ["🗺️", "Ward-level risk map", "All 198 Bengaluru wards scored for flood risk over the next 24h, with a click-through panel that explains WHY each ward is at risk (per-ward model feature attributions)."],
-  ["📡", "Anomaly feed — citizens as sensors", "Detects wards where flood complaints spike far above their seasonal baseline — an early-warning that can fire before rainfall models, flagging cases the model rated only 'moderate'."],
-  ["🕵️", "Insight agent", "An ADK agent investigates each anomaly: correlates rainfall, compares neighbouring wards, checks the model rating, and writes an explainable alert brief."],
-  ["📋", "SOP-grounded response planner", "An ADK agent reads live risk, searches official NDMA flood-management SOPs, allocates resources, and drafts a prioritized action plan where every action cites the SOP page that justifies it."],
-  ["💬", "CityPulse analytics", "Ask 5+ years of grievances in plain English → guarded SQL over BigQuery → chart + narrative answer."],
-  ["🌧️", "What-if simulator", "Push a hypothetical storm (mm / zone) through the trained model and watch the risk map re-score live."],
-  ["📸", "Citizen reporting", "Residents upload a waterlogging photo → Gemini Vision estimates severity & water depth → geotagged → appears live on the control-room map."],
-  ["🧭", "Grounded citizen assistant", "Locate your ward, get a safety advisory, and ask questions answered from your ward's real risk + rainfall."],
+  [ "Ward-level risk map", "All 198 Bengaluru wards scored for flood risk over the next 24h, with a click-through panel that explains WHY each ward is at risk (per-ward model feature attributions)."],
+  ["Anomaly feed — citizens as sensors", "Detects wards where flood complaints spike far above their seasonal baseline — an early-warning that can fire before rainfall models, flagging cases the model rated only 'moderate'."],
+  ["Insight agent", "An ADK agent investigates each anomaly: correlates rainfall, compares neighbouring wards, checks the model rating, and writes an explainable alert brief."],
+  ["SOP-grounded response planner", "An ADK agent reads live risk, searches official NDMA flood-management SOPs, allocates resources, and drafts a prioritized action plan where every action cites the SOP page that justifies it."],
+  ["CityPulse analytics", "Ask 5+ years of grievances in plain English → guarded SQL over BigQuery → chart + narrative answer."],
+  ["What-if simulator", "Push a hypothetical storm (mm / zone) through the trained model and watch the risk map re-score live."],
+  ["Citizen reporting", "Residents upload a waterlogging photo → Gemini Vision estimates severity & water depth → geotagged → appears live on the control-room map."],
+  ["Grounded citizen assistant", "Locate your ward, get a safety advisory, and ask questions answered from your ward's real risk + rainfall."],
 ];
 
 const STATS = [
@@ -115,7 +115,7 @@ export default function HomeView({ view, setView }) {
           <h2 className="text-lg font-bold text-slate-100 mb-4">Under the hood</h2>
           <div className="grid md:grid-cols-3 gap-3">
             <Card>
-              <div className="text-accent font-semibold mb-2">📊 Data</div>
+              <div className="text-accent font-semibold mb-2"> Data</div>
               <ul className="text-[13px] text-slate-300 space-y-1.5 list-disc ml-4">
                 <li>766,648 BBMP grievances (2020–2025), ward-tagged &amp; categorized</li>
                 <li>198-ward BBMP boundaries (GeoJSON)</li>
@@ -128,7 +128,7 @@ export default function HomeView({ view, setView }) {
               </div>
             </Card>
             <Card>
-              <div className="text-accent font-semibold mb-2">🧠 Models trained</div>
+              <div className="text-accent font-semibold mb-2"> Models trained</div>
               <ul className="text-[13px] text-slate-300 space-y-1.5 list-disc ml-4">
                 <li><b>BigQuery ML BOOSTED_TREE_CLASSIFIER</b> — ward flood-risk model</li>
                 <li>Temporal eval: <b>ROC-AUC 0.87</b>, PR-AUC 0.16–0.21, recall@top-20 ≈ 0.59</li>
