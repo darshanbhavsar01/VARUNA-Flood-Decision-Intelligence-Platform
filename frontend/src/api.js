@@ -19,6 +19,16 @@ async function postJSON(path, body) {
   return r.json();
 }
 
+async function postForm(path, formData) {
+  const r = await fetch(BASE + path, { method: "POST", body: formData });
+  if (!r.ok) {
+    let detail = `${r.status}`;
+    try { detail = (await r.json()).detail || detail; } catch {}
+    throw new Error(detail);
+  }
+  return r.json();
+}
+
 export const api = {
   cities: () => getJSON("/api/cities"),
   summary: (city, horizon = 24) =>
@@ -33,6 +43,14 @@ export const api = {
   reports: (city) => getJSON(`/api/reports?city=${city}`),
   agentStatus: () => getJSON("/api/agents/status"),
   responsePlan: (focus) => postJSON("/api/agents/response-plan", { focus: focus || null }),
+  whatif: (body) => postJSON("/api/whatif", body),
+  locate: (lat, lng, city) =>
+    getJSON(`/api/citizen/locate?lat=${lat}&lng=${lng}&city=${city}`),
+  advisory: (wardId, city) =>
+    getJSON(`/api/citizen/advisory?ward_id=${wardId}&city=${city}`),
+  citizenAsk: (wardId, question, city) =>
+    postJSON("/api/citizen/ask", { ward_id: wardId, question, city }),
+  createReport: (formData) => postForm("/api/reports", formData),
 };
 
 export default api;

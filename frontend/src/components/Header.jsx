@@ -1,4 +1,5 @@
 import { BAND_COLORS, timeAgo } from "../lib/format.js";
+import ViewSwitch from "./ViewSwitch.jsx";
 
 function Chip({ band, count }) {
   return (
@@ -10,7 +11,7 @@ function Chip({ band, count }) {
   );
 }
 
-export default function Header({ cityName, summary }) {
+export default function Header({ cityName, summary, view, setView }) {
   const b = summary?.bands || {};
   return (
     <header className="flex items-center gap-4 px-5 h-16 border-b border-ink-600 bg-ink-800/80 backdrop-blur">
@@ -44,6 +45,7 @@ export default function Header({ cityName, summary }) {
           <div className="text-slate-300">{timeAgo(summary.computed_at)}</div>
         </div>
       )}
+      {setView && <ViewSwitch view={view} setView={setView} />}
     </header>
   );
 }
