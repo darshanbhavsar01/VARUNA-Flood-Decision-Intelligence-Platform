@@ -24,7 +24,7 @@ function RiskCard({ advisory }) {
           </div>
         </div>
       </div>
-      <p className="mt-3 text-sm text-slate-200 leading-relaxed">🛟 {advisory.advisory}</p>
+      <p className="mt-3 text-sm text-slate-200 leading-relaxed">{advisory.advisory}</p>
     </div>
   );
 }
@@ -115,7 +115,7 @@ function ReportForm({ wardId, geo }) {
 
   return (
     <div className="rounded-xl border border-ink-600 bg-ink-800 p-4">
-      <div className="text-sm font-semibold mb-2">Report waterlogging </div>
+      <div className="text-sm font-semibold mb-2">Report waterlogging</div>
       <input type="file" accept="image/*" capture="environment"
         onChange={(e) => setFile(e.target.files?.[0] || null)}
         className="block w-full text-sm text-slate-300 file:mr-3 file:py-1.5 file:px-3
@@ -132,7 +132,7 @@ function ReportForm({ wardId, geo }) {
       {err && <div className="mt-2 text-sm text-risk-high">Error: {err}</div>}
       {result && (
         <div className="mt-3 text-sm text-slate-200 border-t border-ink-600 pt-2">
-           Reported{result.ward_name ? ` in ${result.ward_name}` : ""}. Gemini Vision:{" "}
+          Reported{result.ward_name ? ` in ${result.ward_name}` : ""}. Gemini Vision:{" "}
           <b>{result.analysis_category_norm}</b>, severity{" "}
           <b>{result.analysis_severity}</b>
           {result.analysis_water_depth_estimate_cm != null &&
@@ -215,7 +215,7 @@ export default function CitizenView({ view, setView }) {
             <button onClick={useMyLocation} disabled={locating}
               className="px-3 py-1.5 rounded border border-ink-600 text-accent text-sm
                          hover:border-accent disabled:opacity-50 whitespace-nowrap">
-              {locating ? "…" : " Locate"}
+              {locating ? "…" : "Locate"}
             </button>
           </div>
         </div>

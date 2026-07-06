@@ -1,7 +1,7 @@
 import ViewSwitch from "../components/ViewSwitch.jsx";
 
 const FEATURES = [
-  [ "Ward-level risk map", "All 198 Bengaluru wards scored for flood risk over the next 24h, with a click-through panel that explains WHY each ward is at risk (per-ward model feature attributions)."],
+  ["Ward-level risk map", "All 198 Bengaluru wards scored for flood risk over the next 24h, with a click-through panel that explains WHY each ward is at risk (per-ward model feature attributions)."],
   ["Anomaly feed — citizens as sensors", "Detects wards where flood complaints spike far above their seasonal baseline — an early-warning that can fire before rainfall models, flagging cases the model rated only 'moderate'."],
   ["Insight agent", "An ADK agent investigates each anomaly: correlates rainfall, compares neighbouring wards, checks the model rating, and writes an explainable alert brief."],
   ["SOP-grounded response planner", "An ADK agent reads live risk, searches official NDMA flood-management SOPs, allocates resources, and drafts a prioritized action plan where every action cites the SOP page that justifies it."],
@@ -96,15 +96,10 @@ export default function HomeView({ view, setView }) {
         <section>
           <h2 className="text-lg font-bold text-slate-100 mb-4">What it does</h2>
           <div className="grid sm:grid-cols-2 gap-3">
-            {FEATURES.map(([icon, title, desc]) => (
+            {FEATURES.map(([title, desc]) => (
               <Card key={title}>
-                <div className="flex items-start gap-3">
-                  <div className="text-2xl">{icon}</div>
-                  <div>
-                    <div className="font-semibold text-slate-100">{title}</div>
-                    <div className="text-[13px] text-slate-400 mt-1 leading-relaxed">{desc}</div>
-                  </div>
-                </div>
+                <div className="font-semibold text-slate-100">{title}</div>
+                <div className="text-[13px] text-slate-400 mt-1 leading-relaxed">{desc}</div>
               </Card>
             ))}
           </div>
@@ -115,7 +110,7 @@ export default function HomeView({ view, setView }) {
           <h2 className="text-lg font-bold text-slate-100 mb-4">Under the hood</h2>
           <div className="grid md:grid-cols-3 gap-3">
             <Card>
-              <div className="text-accent font-semibold mb-2"> Data</div>
+              <div className="text-accent font-semibold mb-2">Data</div>
               <ul className="text-[13px] text-slate-300 space-y-1.5 list-disc ml-4">
                 <li>766,648 BBMP grievances (2020–2025), ward-tagged &amp; categorized</li>
                 <li>198-ward BBMP boundaries (GeoJSON)</li>
@@ -128,7 +123,7 @@ export default function HomeView({ view, setView }) {
               </div>
             </Card>
             <Card>
-              <div className="text-accent font-semibold mb-2"> Models trained</div>
+              <div className="text-accent font-semibold mb-2">Models trained</div>
               <ul className="text-[13px] text-slate-300 space-y-1.5 list-disc ml-4">
                 <li><b>BigQuery ML BOOSTED_TREE_CLASSIFIER</b> — ward flood-risk model</li>
                 <li>Temporal eval: <b>ROC-AUC 0.87</b>, PR-AUC 0.16–0.21, recall@top-20 ≈ 0.59</li>
