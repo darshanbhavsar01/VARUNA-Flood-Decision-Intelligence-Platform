@@ -1,7 +1,33 @@
-import { MapContainer, TileLayer, GeoJSON, CircleMarker, Tooltip } from "react-leaflet";
+import { useEffect } from "react";
+import { MapContainer, TileLayer, GeoJSON, CircleMarker, Tooltip, useMap }
+  from "react-leaflet";
 import { BAND_COLORS } from "../lib/format.js";
 
 const BLR_CENTER = [12.96, 77.59];
+
+// Bounding box [[minLat,minLng],[maxLat,maxLng]] of a GeoJSON Polygon/MultiPolygon.
+function featureBounds(geom) {
+  let minLat = 90, minLng = 180, maxLat = -90, maxLng = -180;
+  const walk = (a) => {
+    if (typeof a[0] === "number") {
+      const [lng, lat] = a;
+      minLat = Math.min(minLat, lat); maxLat = Math.max(maxLat, lat);
+      minLng = Math.min(minLng, lng); maxLng = Math.max(maxLng, lng);
+    } else a.forEach(walk);
+  };
+  walk(geom.coordinates);
+  return [[minLat, minLng], [maxLat, maxLng]];
+}
+
+function FlyToWard({ geojson, selectedWard }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!geojson || selectedWard == null) return;
+    const f = geojson.features.find((x) => x.properties.ward_id === selectedWard);
+    if (f?.geometry) map.flyToBounds(featureBounds(f.geometry), { maxZoom: 14, duration: 0.8 });
+  }, [selectedWard, geojson, map]);
+  return null;
+}
 
 const band = (s) =>
   s == null ? "unknown" : s >= 0.6 ? "high" : s >= 0.3 ? "moderate" : "low";
@@ -58,6 +84,7 @@ export default function RiskMap({
       {geojson && (
         <GeoJSON key={dataKey} data={geojson} style={style} onEachFeature={onEach} />
       )}
+      <FlyToWard geojson={geojson} selectedWard={selectedWard} />
       {reports.filter((r) => r.lat && r.lng).map((r) => (
         <CircleMarker
           key={r.id}

@@ -7,6 +7,7 @@ import RankedList from "../components/RankedList.jsx";
 import CityPulse from "../components/CityPulse.jsx";
 import ResponsePlan from "../components/ResponsePlan.jsx";
 import WhatIf from "../components/WhatIf.jsx";
+import Anomalies from "../components/Anomalies.jsx";
 import { BAND_COLORS, BAND_LABEL } from "../lib/format.js";
 
 const CITY = "blr";
@@ -93,10 +94,11 @@ export default function CommandView({ view, setView }) {
         </div>
 
         <aside className="w-[440px] shrink-0 border-l border-ink-600 bg-ink-800 flex flex-col">
-          <div className="flex border-b border-ink-600 text-[13px]">
+          <div className="flex border-b border-ink-600 text-xs">
             {[
-              ["wards", "Ward risk"],
-              ["plan", "Response Plan"],
+              ["wards", "Wards"],
+              ["alerts", "Alerts"],
+              ["plan", "Plan"],
               ["whatif", "What-if"],
               ["citypulse", "CityPulse"],
             ].map(([id, label]) => (
@@ -123,6 +125,7 @@ export default function CommandView({ view, setView }) {
               </div>
             </div>
           )}
+          {tab === "alerts" && <Anomalies city={CITY} onSelectWard={selectWard} />}
           {tab === "plan" && <ResponsePlan focus={focusWardName} />}
           {tab === "whatif" && (
             <WhatIf city={CITY}

@@ -12,7 +12,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from .routers import agents, citizen, citypulse, reports, risk, whatif
+from .routers import (agents, anomalies, citizen, citypulse, reports, risk,
+                      whatif)
 from .services.settings import get_settings, list_cities
 
 REPO = Path(__file__).resolve().parents[1]
@@ -31,6 +32,7 @@ app.include_router(reports.router)
 app.include_router(agents.router)
 app.include_router(citizen.router)
 app.include_router(whatif.router)
+app.include_router(anomalies.router)
 
 
 @app.get("/api/health")

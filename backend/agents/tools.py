@@ -91,6 +91,89 @@ def search_sops(query: str) -> dict:
         return {"error": str(e)[:200], "passages": []}
 
 
+def get_complaint_trend(ward_id: int, category_norm: str, date: str) -> dict:
+    """Daily complaint counts for a ward and category in the ~10 days around `date`
+    (YYYY-MM-DD). Use to see how sharp and sudden the spike was."""
+    try:
+        rows = bq.query(f"""
+          SELECT FORMAT_DATE('%Y-%m-%d', DATE(created_at)) d, COUNT(*) n
+          FROM {bq.t('grievances')}
+          WHERE city_id='{CITY}' AND ward_id=@wid AND category_norm=@cat
+            AND DATE(created_at) BETWEEN DATE_SUB(DATE(@d), INTERVAL 7 DAY)
+                                     AND DATE_ADD(DATE(@d), INTERVAL 2 DAY)
+          GROUP BY d ORDER BY d
+        """, {"wid": ward_id, "cat": category_norm, "d": date})
+        return {"trend": rows}
+    except Exception as e:  # noqa: BLE001
+        return {"error": str(e)[:200]}
+
+
+def get_rainfall_context(ward_id: int, date: str) -> dict:
+    """Rainfall (mm) in the ward's zone on `date` and the two prior days. Use to judge
+    whether rain explains the complaint spike, or whether citizens flagged it first."""
+    try:
+        rows = bq.query(f"""
+          WITH gp AS (SELECT grid_point_id FROM {bq.t('ward_grid_map')}
+                      WHERE ward_id=@wid LIMIT 1)
+          SELECT FORMAT_DATE('%Y-%m-%d', DATE(ts)) d, ROUND(SUM(rain_mm),1) rain_mm
+          FROM {bq.t('rainfall_hourly')}
+          WHERE city_id='{CITY}' AND is_forecast=FALSE
+            AND grid_point_id=(SELECT grid_point_id FROM gp)
+            AND DATE(ts) BETWEEN DATE_SUB(DATE(@d), INTERVAL 2 DAY) AND DATE(@d)
+          GROUP BY d ORDER BY d
+        """, {"wid": ward_id, "d": date})
+        return {"rainfall_by_day": rows}
+    except Exception as e:  # noqa: BLE001
+        return {"error": str(e)[:200]}
+
+
+def get_ward_profile(ward_id: int) -> dict:
+    """Ward name, zone, whether low-lying, historical flood-prone spots, and current
+    model risk band — to judge if this spike was in a ward the model already rated
+    high, or one it rated only moderate (citizens catching it first)."""
+    try:
+        rows = bq.query(f"""
+          WITH latest AS (
+            SELECT ward_id, score FROM {bq.t('risk_scores')}
+            WHERE city_id='{CITY}' AND horizon_hrs=24
+              AND computed_at=(SELECT MAX(computed_at) FROM {bq.t('risk_scores')}
+                               WHERE city_id='{CITY}' AND horizon_hrs=24))
+          SELECT w.ward_name, w.zone, w.is_low_lying, w.historical_flood_count,
+                 ROUND(l.score,3) risk_score
+          FROM {bq.t('wards')} w LEFT JOIN latest l USING (ward_id)
+          WHERE w.city_id='{CITY}' AND w.ward_id=@wid
+        """, {"wid": ward_id})
+        if not rows:
+            return {"error": "ward not found"}
+        r = rows[0]
+        s = r["risk_score"]
+        r["risk_band"] = ("high" if s and s >= 0.6 else "moderate" if s and s >= 0.3
+                          else "low" if s is not None else "unknown")
+        return r
+    except Exception as e:  # noqa: BLE001
+        return {"error": str(e)[:200]}
+
+
+def get_zone_spike_comparison(ward_id: int, category_norm: str, date: str) -> dict:
+    """Other wards in the SAME zone and their complaint counts for this category on
+    `date` — to see whether neighbours corroborate a genuine local event."""
+    try:
+        rows = bq.query(f"""
+          WITH z AS (SELECT zone FROM {bq.t('wards')}
+                     WHERE city_id='{CITY}' AND ward_id=@wid)
+          SELECT w.ward_name, COUNT(*) n
+          FROM {bq.t('grievances')} g
+          JOIN {bq.t('wards')} w ON w.city_id='{CITY}' AND w.ward_id=g.ward_id
+          WHERE g.city_id='{CITY}' AND g.category_norm=@cat
+            AND w.zone=(SELECT zone FROM z)
+            AND DATE(g.created_at)=DATE(@d)
+          GROUP BY w.ward_name ORDER BY n DESC LIMIT 8
+        """, {"wid": ward_id, "cat": category_norm, "d": date})
+        return {"same_zone_counts": rows}
+    except Exception as e:  # noqa: BLE001
+        return {"error": str(e)[:200]}
+
+
 def get_resource_inventory(zone: str = "") -> dict:
     """Return the available emergency resources (dewatering pumps, crews, boats,
     relief shelters) for a BBMP zone, to allocate in the response plan. NOTE: this

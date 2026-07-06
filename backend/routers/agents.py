@@ -53,3 +53,22 @@ async def response_plan(body: PlanIn | None = None):
     if focus:
         prompt += f" Pay particular attention to {focus}."
     return await _run("response_planner", prompt)
+
+
+class InvestigateIn(BaseModel):
+    ward_id: int
+    category_norm: str
+    date: str                 # YYYY-MM-DD
+    observed: float | None = None
+    expected: float | None = None
+    deviation: float | None = None
+
+
+@router.post("/investigate")
+async def investigate(body: InvestigateIn):
+    prompt = (
+        f"A complaint anomaly fired for ward_id={body.ward_id}, category="
+        f"{body.category_norm}, date={body.date}: {int(body.observed or 0)} complaints "
+        f"vs an expected {body.expected} (~{body.deviation}x the seasonal baseline). "
+        "Investigate and write the alert brief.")
+    return await _run("insight", prompt)

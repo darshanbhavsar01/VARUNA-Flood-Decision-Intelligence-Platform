@@ -65,6 +65,29 @@ def _is_retriable(exc) -> bool:
                 "api key not valid", "api_key_invalid"))
 
 
+INSIGHT_INSTRUCTION = """
+You are VARUNA's CityPulse Insight agent. A complaint-anomaly has fired: a ward's
+flood-signal complaints spiked far above its seasonal baseline. Investigate WHY and
+write a short alert brief for the control room.
+
+Steps (be economical — call each tool at most once):
+1. get_ward_profile(ward_id) — is this ward low-lying / already rated high risk, or
+   only moderate (citizens catching it before the model)?
+2. get_rainfall_context(ward_id, date) — did heavy rain precede/accompany the spike?
+3. get_zone_spike_comparison(ward_id, category, date) — do neighbouring wards
+   corroborate a real local event?
+4. get_complaint_trend(ward_id, category, date) — how sudden was it?
+
+Then write GitHub-flavored markdown, <=130 words:
+**Headline** (one line: ward, what spiked, how many x baseline).
+**Assessment**: likely cause (rain-driven vs citizens-first), corroboration from
+neighbours, and whether the model under-rated this ward.
+**Recommended action**: one concrete next step.
+Be factual and cite the numbers the tools return. This is complaint-verified
+waterlogging signal, not certainty.
+""".strip()
+
+
 @functools.lru_cache
 def _build_agent(agent_name: str, model: str, api_key: str):
     # api_key is part of the cache key so each key gets its own agent instance
@@ -78,6 +101,13 @@ def _build_agent(agent_name: str, model: str, api_key: str):
             description="Assesses current ward-level flood risk and rainfall.",
             instruction=RISK_ANALYST_INSTRUCTION,
             tools=[tools.get_risk_assessment, tools.get_rainfall_outlook])
+    if agent_name == "insight":
+        return LlmAgent(
+            name="insight_agent", model=model,
+            description="Investigates a complaint anomaly and writes an alert brief.",
+            instruction=INSIGHT_INSTRUCTION,
+            tools=[tools.get_ward_profile, tools.get_rainfall_context,
+                   tools.get_zone_spike_comparison, tools.get_complaint_trend])
     return LlmAgent(
         name="response_planner", model=model,
         description="Drafts an SOP-cited flood response plan and citizen advisory.",

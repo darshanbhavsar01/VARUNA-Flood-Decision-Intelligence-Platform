@@ -44,6 +44,11 @@ export const api = {
   agentStatus: () => getJSON("/api/agents/status"),
   responsePlan: (focus) => postJSON("/api/agents/response-plan", { focus: focus || null }),
   whatif: (body) => postJSON("/api/whatif", body),
+  anomalies: (city, order = "severity") =>
+    getJSON(`/api/anomalies?city=${city}&order=${order}`),
+  investigate: (a) => postJSON("/api/agents/investigate", {
+    ward_id: a.ward_id, category_norm: a.category_norm, date: a.date,
+    observed: a.observed, expected: a.expected, deviation: a.deviation }),
   locate: (lat, lng, city) =>
     getJSON(`/api/citizen/locate?lat=${lat}&lng=${lng}&city=${city}`),
   advisory: (wardId, city) =>
