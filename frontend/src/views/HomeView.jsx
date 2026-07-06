@@ -140,16 +140,13 @@ export default function HomeView({ view, setView }) {
               </div>
             </Card>
             <Card>
-              <div className="text-accent font-semibold mb-2">🤖 AI in use</div>
+              <div className="text-accent font-semibold mb-2">AI in use</div>
               <ul className="text-[13px] text-slate-300 space-y-1.5 list-disc ml-4">
-                <li><b>Gemini 2.5 Flash</b> (+ 6-model fallback chain) — NL-to-SQL, Vision, agents</li>
+                <li><b>Gemini 2.5 Flash</b> — NL-to-SQL, Vision, agents</li>
                 <li><b>gemini-embedding-001</b> — SOP RAG (cosine retrieval)</li>
                 <li><b>Google ADK</b> — 3 agents: RiskAnalyst, ResponsePlanner, Insight</li>
                 <li>Gemini Vision — citizen photo severity/depth extraction</li>
               </ul>
-              <div className="text-[11px] text-slate-500 mt-2">
-                AI-Studio Gemini (not Vertex endpoints) + multi-key quota fallback.
-              </div>
             </Card>
           </div>
         </section>
@@ -164,27 +161,13 @@ export default function HomeView({ view, setView }) {
           </div>
         </section>
 
-        {/* Limitations */}
-        <section>
-          <Card className="bg-amber-500/5 border-amber-500/30">
-            <div className="text-amber-300 font-semibold mb-2">🔍 Honest limitations</div>
-            <ul className="text-[13px] text-slate-300 space-y-1.5 list-disc ml-4">
-              <li><b>Complaint proxy bias:</b> risk is trained on citizen complaints, which
-                over-represent affluent/tech corridors. We control for ward reporting
-                propensity, but the bias is real.</li>
-              <li><b>No drain-network data</b> or real-time drain sensors exist publicly —
-                the architecture is "sensor-ready".</li>
-              <li><b>Ward join ≈ 92%:</b> ~12 grievance wards are absent from the 2015 ward
-                map (documented, not silently mis-assigned).</li>
-              <li><b>Simulated:</b> the resource inventory (pumps/crews) is clearly labelled
-                demo data, not a live feed.</li>
-            </ul>
-          </Card>
-        </section>
-
         <footer className="text-center text-[11px] text-slate-600 pb-6">
-          VARUNA · built for the Hack2skill × Google Cloud APAC Gen AI Academy Hackathon ·
-          deployed for Bengaluru, architected for 4,500 ULBs.
+          VARUNA · built by{" "}
+          <a href="https://www.linkedin.com/in/darshan01/" target="_blank"
+             rel="noopener noreferrer" className="text-slate-400 hover:text-accent">
+            Darshan Bhavsar
+          </a>{" "}
+          · deployed for Bengaluru, architected for 4,500 ULBs.
         </footer>
       </div>
     </div>
