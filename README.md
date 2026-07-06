@@ -12,7 +12,10 @@ Citizen complaints are a city's largest untapped sensor network. VARUNA turns th
 **Live demo:** https://varuna-229692962627.asia-south1.run.app
 
 **Command View** — ward-level flood-risk choropleth (198 wards) with a click-through
-explainability panel; **CityPulse** NL-to-SQL analytics chat; the **ADK Response
+explainability panel; an **anomaly feed** ("citizens as sensors") flagging wards
+whose flood complaints spiked far above their seasonal baseline, each investigable by
+the **CityPulse Insight agent** (ADK) which correlates rain, neighbours, and the model
+rating into an alert brief; **CityPulse** NL-to-SQL analytics chat; the **ADK Response
 Planner** agent (reads live risk, searches NDMA flood-management SOPs, allocates
 resources, and drafts a prioritized action plan where every action cites the SOP
 page that justifies it, plus a citizen advisory); a **what-if rainfall simulator**
@@ -23,7 +26,8 @@ report markers.
 risk + a grounded safety advisory, ask questions in natural language, and report
 waterlogging with a photo (Gemini Vision → Firestore → appears on the Command map).
 
-Next (P1): anomaly detection + Insight Agent, and a second-city "lite" mode.
+Remaining (optional): a second-city "lite" mode (rain-only) to showcase the
+config-driven multi-city architecture.
 
 Gemini calls use an automatic **model-fallback chain** (each model has its own
 free-tier quota bucket), so CityPulse, Vision, and the agents survive per-model
