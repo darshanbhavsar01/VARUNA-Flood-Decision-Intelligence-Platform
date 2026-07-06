@@ -2,6 +2,7 @@ export default function ViewSwitch({ view, setView }) {
   return (
     <div className="flex rounded-lg border border-ink-600 overflow-hidden text-sm">
       {[
+        ["home", "Home"],
         ["command", "Command"],
         ["citizen", "Citizen"],
       ].map(([id, label]) => (
