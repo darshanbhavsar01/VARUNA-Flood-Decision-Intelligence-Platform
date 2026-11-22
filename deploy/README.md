@@ -1,6 +1,6 @@
 # Deploy — Cloud Run (asia-south1, scale-to-zero, budget-safe §6)
 
-**Live:** https://varuna-229692962627.asia-south1.run.app
+**Status:** the event deployment has been decommissioned; the steps below recreate it.
 
 ## One command
 ```bash

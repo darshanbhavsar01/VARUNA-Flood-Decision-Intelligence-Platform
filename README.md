@@ -8,7 +8,7 @@
 Citizen complaints are a city's largest untapped sensor network.
 **VARUNA turns them into predictive flood infrastructure.**
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-online-4fc3f7?style=for-the-badge&logo=googlecloud&logoColor=white)](https://varuna-229692962627.asia-south1.run.app)
+[![Demo Video](https://img.shields.io/badge/Demo%20Video-watch-4fc3f7?style=for-the-badge&logo=googledrive&logoColor=white)](https://drive.google.com/drive/folders/1G7pZisYnW9c-d7P_oV_YNEpQpmXj1EVy?usp=drive_link)
 
 ![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)
 ![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=0a1018)
@@ -18,7 +18,6 @@ Citizen complaints are a city's largest untapped sensor network.
 ![Google ADK](https://img.shields.io/badge/Google-ADK-4285F4?logo=google&logoColor=white)
 ![Cloud Run](https://img.shields.io/badge/Deployed%20on-Cloud%20Run-4285F4?logo=googlecloud&logoColor=white)
 
-[**Live Demo**](https://varuna-229692962627.asia-south1.run.app) ·
 [**Video Walkthrough**](https://drive.google.com/drive/folders/1G7pZisYnW9c-d7P_oV_YNEpQpmXj1EVy?usp=drive_link) ·
 [Architecture](#architecture) ·
 [Getting Started](#getting-started)
@@ -68,9 +67,9 @@ Body (ULB) in India.
 
 ## Live demo
 
-**https://varuna-229692962627.asia-south1.run.app**
+The hosted demo is offline: the Cloud Run instance was taken down after the event to keep cloud cost at zero. Watch the [video walkthrough](#video-walkthrough), or follow [Getting Started](#getting-started) to run it locally.
 
-Deployed on Google Cloud Run (scale-to-zero). Opens on a **Home** overview; use the
+When deployed (Cloud Run, scale-to-zero), the app opens on a **Home** overview; use the
 view switcher to explore **Command View** (control room) and **Citizen View**
 (resident-facing).
 
